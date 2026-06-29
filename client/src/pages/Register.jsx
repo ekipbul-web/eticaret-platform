@@ -12,16 +12,28 @@ export default function Register() {
     setMsg('')
     setErr('')
     setLoading(true)
-    
     try {
       await axios.post('/api/auth/register', form)
-      setMsg('✅ Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...')
+      setMsg('Kayit basarili! Giris sayfasina yonlendiriliyorsunuz...')
       setTimeout(() => { window.location.href = '/login' }, 2000)
-    } catch(err) {
-      setErr(err.response?.data?.error || 'Kayıt başarısız')
+    } catch(error) {
+      setErr(error.response?.data?.error || 'Kayit basarisiz')
     } finally {
       setLoading(false)
     }
+  }
+
+  const s = {
+    width: '100%',
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: 14,
+    border: '1px solid rgba(255,255,255,0.15)',
+    background: 'rgba(255,255,255,0.05)',
+    color: 'white',
+    fontSize: 16,
+    outline: 'none',
+    boxSizing: 'border-box'
   }
 
   return (
@@ -33,8 +45,65 @@ export default function Register() {
         borderRadius: 24,
         padding: 50
       }}>
-        <h2 style={{ color: 'white', fontSize: 32, fontWeight: 800, textAlign: 'center', marginBottom: 10 }}>Kayıt Ol</h2>
-        <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: 35 }}>Yeni hesap oluşturun</p>
+        <h2 style={{ color: 'white', fontSize: 32, fontWeight: 800, textAlign: 'center', marginBottom: 10 }}>
+          Kayit Ol
+        </h2>
+        <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: 35 }}>
+          Yeni hesap olusturun
+        </p>
+        
+        {msg && (
+          <div style={{
+            background: 'rgba(16,185,129,0.15)',
+            border: '1px solid rgba(16,185,129,0.3)',
+            color: '#6ee7b7',
+            padding: 14,
+            borderRadius: 12,
+            marginBottom: 20,
+            fontSize: 14,
+            textAlign: 'center'
+          }}>
+            {msg}
+          </div>
+        )}
+        
+        {err && (
+          <div style={{
+            background: 'rgba(239,68,68,0.15)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            color: '#fca5a5',
+            padding: 14,
+            borderRadius: 12,
+            marginBottom: 20,
+            fontSize: 14,
+            textAlign: 'center'
+          }}>
+            {err}
+          </div>
+        )}
+        
+        <form onSubmit={register}>
+          <input placeholder="Kullanici Adi" value={form.username} onChange={e => setForm({...form, username: e.target.value})} required style={s} />
+          <input type="email" placeholder="Email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required style={s} />
+          <input type="password" placeholder="Sifre (min 8 karakter)" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required style={s} />
+          <input placeholder="Telefon (opsiyonel)" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} style={{...s, marginBottom: 24}} />
+          <button type="submit" disabled={loading}
+            style={{
+              width: '100%', padding: 16, borderRadius: 14,
+              background: loading ? '#555' : 'linear-gradient(135deg, #667eea, #764ba2)',
+              color: 'white', border: 'none', fontSize: 17, fontWeight: 700, cursor: 'pointer'
+            }}>
+            {loading ? 'Kaydediliyor...' : 'Kayit Ol'}
+          </button>
+        </form>
+        
+        <p style={{ textAlign: 'center', marginTop: 25, color: '#94a3b8', fontSize: 14 }}>
+          Hesabiniz var mi? <a href="/login" style={{ color: '#818cf8', textDecoration: 'none', fontWeight: 600 }}>Giris Yap</a>
+        </p>
+      </div>
+    </div>
+  )
+}        <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: 35 }}>Yeni hesap oluşturun</p>
         
         {msg && <div style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#6ee7b7', padding: 14, borderRadius: 12, marginBottom: 20, fontSize: 14, textAlign: 'center' }}>{msg}</div>}
         {err && <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: 14, borderRadius: 12, marginBottom: 20, fontSize: 14, textAlign: 'center' }}>{err}</div>}
