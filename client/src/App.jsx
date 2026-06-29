@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import axios from 'axios'
 
-// Ana stil objesi
 const css = `
   * { margin:0; padding:0; box-sizing:border-box }
   body { font-family: 'Segoe UI', system-ui, sans-serif }
@@ -16,7 +15,6 @@ const css = `
   .float { animation: float 3s ease-in-out infinite }
 `
 
-// Kullanıcı menüsü
 function UserMenu({ user, logout }) {
   const [open, setOpen] = useState(false)
   return (
@@ -41,7 +39,6 @@ function UserMenu({ user, logout }) {
   )
 }
 
-// Ana Layout
 function Layout({ children }) {
   const [user, setUser] = useState(null)
   const [scrolled, setScrolled] = useState(false)
@@ -82,12 +79,12 @@ function Layout({ children }) {
           </div>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <Link to="/" style={{ color: '#c4b5fd', textDecoration: 'none', fontSize: 14, fontWeight: 500, padding: '6px 12px', borderRadius: 8, transition: 'all 0.2s' }}>Kesfet</Link>
+          <Link to="/" style={{ color: '#c4b5fd', textDecoration: 'none', fontSize: 14, fontWeight: 500, padding: '6px 12px', borderRadius: 8 }}>Kesfet</Link>
           {user ? (
             <UserMenu user={user} logout={logout} />
           ) : (
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <Link to="/login" style={{ color: '#c4b5fd', textDecoration: 'none', fontSize: 14, fontWeight: 500, padding: '8px 16px', borderRadius: 10, transition: 'all 0.2s' }}>Giris Yap</Link>
+              <Link to="/login" style={{ color: '#c4b5fd', textDecoration: 'none', fontSize: 14, fontWeight: 500, padding: '8px 16px', borderRadius: 10 }}>Giris Yap</Link>
               <Link to="/register" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', padding: '10px 22px', borderRadius: 12, textDecoration: 'none', fontSize: 14, fontWeight: 600, boxShadow: '0 8px 25px rgba(102,126,234,0.3)' }}>Kayit Ol</Link>
             </div>
           )}
@@ -98,11 +95,9 @@ function Layout({ children }) {
   )
 }
 
-// Ana Sayfa
 function Home() {
   const [needsSetup, setNeedsSetup] = useState(false)
   const [user, setUser] = useState(null)
-  const [stats, setStats] = useState({ users: 0, listings: 0 })
 
   useEffect(() => {
     axios.get('/api/setup/check').then(r => setNeedsSetup(r.data.needsSetup)).catch(() => {})
@@ -125,20 +120,13 @@ function Home() {
 
   return (
     <div>
-      {/* Hero */}
       <div className="fadeUp" style={{
         background: 'radial-gradient(circle at 50% 0%, rgba(102,126,234,0.2), transparent 70%)',
-        borderRadius: 40,
-        padding: '80px 30px',
-        textAlign: 'center',
-        marginBottom: 60,
-        border: '1px solid rgba(255,255,255,0.06)',
-        position: 'relative',
-        overflow: 'hidden'
+        borderRadius: 40, padding: '80px 30px', textAlign: 'center', marginBottom: 60,
+        border: '1px solid rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden'
       }}>
         <div style={{ position: 'absolute', top: 30, left: '10%', width: 60, height: 60, borderRadius: 16, background: 'linear-gradient(135deg, rgba(139,92,246,0.3), transparent)', transform: 'rotate(15deg)' }} className="float" />
-        <div style={{ position: 'absolute', bottom: 40, right: '10%', width: 80, height: 80, borderRadius: 20, background: 'linear-gradient(135deg, rgba(59,130,246,0.3), transparent)', transform: 'rotate(-10deg)' }} className="float" style={{ animationDelay: '1s' }} />
-        <div style={{ position: 'absolute', top: '50%', right: '5%', width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(245,158,11,0.3), transparent)' }} className="float" style={{ animationDelay: '2s' }} />
+        <div style={{ position: 'absolute', bottom: 40, right: '10%', width: 80, height: 80, borderRadius: 20, background: 'linear-gradient(135deg, rgba(59,130,246,0.3), transparent)', transform: 'rotate(-10deg)' }} className="float" />
         
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 40, padding: '8px 20px', marginBottom: 30, color: '#c4b5fd', fontSize: 13, fontWeight: 500 }}>
@@ -156,13 +144,13 @@ function Home() {
           
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             {needsSetup ? (
-              <Link to="/setup" style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', color: 'white', padding: '16px 40px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 700, boxShadow: '0 15px 40px rgba(245,158,11,0.3)', transition: 'all 0.3s' }}>🚀 Platformu Baslat</Link>
+              <Link to="/setup" style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', color: 'white', padding: '16px 40px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 700, boxShadow: '0 15px 40px rgba(245,158,11,0.3)' }}>🚀 Platformu Baslat</Link>
             ) : user ? (
-              <Link to="/create-listing" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', padding: '16px 40px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 700, boxShadow: '0 15px 40px rgba(102,126,234,0.3)', transition: 'all 0.3s' }}>📝 Ilan Ver</Link>
+              <span style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', padding: '16px 40px', borderRadius: 16, fontSize: 17, fontWeight: 700, boxShadow: '0 15px 40px rgba(102,126,234,0.3)' }}>📝 Ilan Ver</span>
             ) : (
-              <Link to="/register" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', padding: '16px 40px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 700, boxShadow: '0 15px 40px rgba(102,126,234,0.3)', transition: 'all 0.3s' }}>Hemen Basla</Link>
+              <Link to="/register" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', padding: '16px 40px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 700, boxShadow: '0 15px 40px rgba(102,126,234,0.3)' }}>Hemen Basla</Link>
             )}
-            <Link to="/search" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', padding: '16px 40px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 600, transition: 'all 0.3s' }}>Urunleri Kesfet →</Link>
+            <Link to="/search" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', padding: '16px 40px', borderRadius: 16, textDecoration: 'none', fontSize: 17, fontWeight: 600 }}>Urunleri Kesfet →</Link>
           </div>
           
           <div style={{ display: 'flex', gap: 40, justifyContent: 'center', marginTop: 50, flexWrap: 'wrap' }}>
@@ -175,7 +163,6 @@ function Home() {
         </div>
       </div>
 
-      {/* Kategoriler */}
       <div style={{ marginBottom: 60 }}>
         <div style={{ marginBottom: 30 }}>
           <h2 style={{ fontSize: 30, fontWeight: 800, color: 'white', marginBottom: 8 }}>Kategoriler</h2>
@@ -184,12 +171,7 @@ function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
           {cats.map(cat => (
             <div key={cat.n} className="fadeUp" style={{
-              background: cat.g,
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 24,
-              padding: 35,
-              cursor: 'pointer',
-              transition: 'all 0.3s',
+              background: cat.g, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: 35, cursor: 'pointer', transition: 'all 0.3s'
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = cat.c; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 20px 50px ${cat.c}20` }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
@@ -201,7 +183,6 @@ function Home() {
         </div>
       </div>
 
-      {/* Ozellikler */}
       <div style={{ marginBottom: 60 }}>
         <h2 style={{ fontSize: 30, fontWeight: 800, color: 'white', marginBottom: 8, textAlign: 'center' }}>Neden MarketPlace?</h2>
         <p style={{ color: '#94a3b8', fontSize: 15, textAlign: 'center', marginBottom: 40 }}>Sizi dusunerek tasarladik</p>
@@ -216,7 +197,6 @@ function Home() {
         </div>
       </div>
 
-      {/* Footer */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '40px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>M</div>
@@ -224,16 +204,15 @@ function Home() {
         </div>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           <span style={{ color: '#64748b', fontSize: 13 }}>© 2024 MarketPlace</span>
-          <span style={{ color: '#64748b', fontSize: 13, cursor: 'pointer' }}>Gizlilik</span>
-          <span style={{ color: '#64748b', fontSize: 13, cursor: 'pointer' }}>Kosullar</span>
-          <span style={{ color: '#64748b', fontSize: 13, cursor: 'pointer' }}>Iletisim</span>
+          <span style={{ color: '#64748b', fontSize: 13 }}>Gizlilik</span>
+          <span style={{ color: '#64748b', fontSize: 13 }}>Kosullar</span>
+          <span style={{ color: '#64748b', fontSize: 13 }}>Iletisim</span>
         </div>
       </div>
     </div>
   )
 }
 
-// GIRIS SAYFASI
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -254,7 +233,7 @@ function Login() {
     } finally { setLoading(false) }
   }
 
-  const s = { width: '100%', padding: '15px 18px', marginBottom: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: 'white', fontSize: 15, outline: 'none', transition: 'all 0.2s' }
+  const s = { width: '100%', padding: '15px 18px', marginBottom: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: 'white', fontSize: 15, outline: 'none' }
 
   return (
     <div style={{ maxWidth: 440, margin: '40px auto' }}>
@@ -280,7 +259,6 @@ function Login() {
   )
 }
 
-// KAYIT SAYFASI
 function Register() {
   const [form, setForm] = useState({ username: '', email: '', password: '', phone: '' })
   const [msg, setMsg] = useState('')
@@ -301,7 +279,7 @@ function Register() {
     } finally { setLoading(false) }
   }
 
-  const s = { width: '100%', padding: '15px 18px', marginBottom: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: 'white', fontSize: 15, outline: 'none', transition: 'all 0.2s' }
+  const s = { width: '100%', padding: '15px 18px', marginBottom: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: 'white', fontSize: 15, outline: 'none' }
 
   return (
     <div style={{ maxWidth: 440, margin: '40px auto' }}>
@@ -330,11 +308,19 @@ function Register() {
   )
 }
 
-// KURULUM SAYFASI
 function Setup() {
   const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', setupKey: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    axios.get('/api/setup/check').then(r => {
+      if (!r.data.needsSetup) {
+        alert('Owner zaten mevcut. Bu sayfa kullanilamaz.')
+        window.location.href = '/'
+      }
+    }).catch(() => {})
+  }, [])
 
   const setup = async (e) => {
     e.preventDefault()
@@ -349,7 +335,7 @@ function Setup() {
     } finally { setLoading(false) }
   }
 
-  const s = { width: '100%', padding: '15px 18px', marginBottom: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: 'white', fontSize: 15, outline: 'none', transition: 'all 0.2s' }
+  const s = { width: '100%', padding: '15px 18px', marginBottom: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: 'white', fontSize: 15, outline: 'none' }
 
   return (
     <div style={{ maxWidth: 460, margin: '40px auto' }}>
@@ -373,7 +359,6 @@ function Setup() {
   )
 }
 
-// APP
 export default function App() {
   return (
     <BrowserRouter>
@@ -387,4 +372,4 @@ export default function App() {
       </Layout>
     </BrowserRouter>
   )
-      }
+}
