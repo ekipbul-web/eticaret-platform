@@ -1,8 +1,0 @@
-{
-  "name": "eticaret-platform",
-  "version": "1.0.0",
-  "scripts": {
-    "build": "cd client && npm install && npm run build",
-    "start": "cd server && npm install && node src/app.js"
-  }
-}
