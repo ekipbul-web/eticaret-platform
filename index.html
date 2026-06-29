@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketPlace</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.production.min.js"></script>
+  <script src="https://unpkg.com/axios@1/dist/axios.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#0c0a1d;color:#fff}
+    input:focus,textarea:focus,select:focus{border-color:#818cf8!important;box-shadow:0 0 0 3px rgba(129,140,248,0.2)!important;outline:none}
+    button:active{transform:scale(0.97)}button{cursor:pointer}a{text-decoration:none}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .fadeUp{animation:fadeUp 0.4s ease-out}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0c0a1d}::-webkit-scrollbar-thumb{background:#374151;border-radius:3px}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, createContext, useContext } = React
+    const { BrowserRouter, Routes, Route, Link, useNavigate, useParams } = ReactRouterDOM
+
+    const api = axios.create({ baseURL: '/api' })
+    api.interceptors.request.use(c => {
+      const t = localStorage.getItem('token')
+      if (t) c.headers.Authorization = 'Bearer ' + t
+      return c
+    })
+    api.interceptors.response.use(r => r, err => {
+      if (err.response?.status === 401) { localStorage.clear(); window.location.href = '/login' }
+      return Promise.reject(err)
+    })
+
+    const AuthContext = createContext(null)
+    function AuthProvider({ children }) {
+      const [user, setUser] = useState(null)
+      useEffect(() => {
+        const t = localStorage.getItem('token')
+        const u = localStorage.getItem('user')
+        if (t && u) setUser(JSON.parse(u))
+      }, [])
+      const login = (token, userData) => {
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(userData))
+        setUser(userData)
+      }
+      const logout = () => { localStorage.clear(); setUser(null) }
+      return React.createElement(AuthContext.Provider, { value: { user, login, logout, isAuth: !!user } }, children)
+    }
+    function useAuth() { return useContext(AuthContext) }
+
+    const St = {
+      input: { width:'100%',padding:'14px 16px',marginBottom:10,borderRadius:12,border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.04)',color:'white',fontSize:14 },
+      btn: { padding:'14px 24px',borderRadius:12,border:'none',color:'white',fontSize:15,fontWeight:700,cursor:'pointer',display:'inline-flex',alignItems:'center',gap:8 },
+      btnSm: { padding:'8px 16px',borderRadius:8,border:'none',color:'white',fontSize:12,fontWeight:600,cursor:'pointer' },
+      card: { background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:24,padding:32 },
+      badge: (c) => ({ display:'inline-block',padding:'4px 12px',borderRadius:20,fontSize:11,fontWeight:700,background:c+'20',color:c,border:'1px solid '+c+'30' }),
+      center: { display:'flex',alignItems:'center',justifyContent:'center',minHeight:300 }
+    }
+
+    function UserMenu() {
+      const { user, logout } = useAuth()
+      const [o, setO] = useState(false)
+      const n = useNavigate()
+      return React.createElement('div', { style:{position:'relative'} },
+        React.createElement('button', { onClick:()=>setO(!o), style:{display:'flex',alignItems:'center',gap:10,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:40,padding:'6px 14px 6px 6px',color:'white',fontSize:14,fontWeight:500} },
+          React.createElement('div', { style:{width:34,height:34,borderRadius:'50%',background:'linear-gradient(135deg,#667eea,#764ba2)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14} }, user?.username?.charAt(0)?.toUpperCase()),
+          React.createElement('span', { style:{maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'} }, user?.username)
+        ),
+        o && React.createElement(React.Fragment, null,
+          React.createElement('div', { style:{position:'fixed',inset:0,zIndex:99}, onClick:()=>setO(false) }),
+          React.createElement('div', { style:{position:'absolute',right:0,top:48,background:'#1e1b4b',border:'1px solid rgba(255,255,255,0.12)',borderRadius:16,padding:6,minWidth:180,zIndex:100,boxShadow:'0 20px 50px rgba(0,0,0,0.5)'} },
+            React.createElement('div', { style:{padding:'10px 14px',borderBottom:'1px solid rgba(255,255,255,0.08)',color:'#a78bfa',fontSize:13} }, user?.email),
+            React.createElement('button', { onClick:()=>{n('/profile');setO(false)}, style:{width:'100%',padding:'10px 14px',border:'none',background:'none',color:'white',cursor:'pointer',textAlign:'left',borderRadius:8,fontSize:13,marginTop:4} }, '👤 Profilim'),
+            React.createElement('button', { onClick:()=>{n('/my-listings');setO(false)}, style:{width:'100%',padding:'10px 14px',border:'none',background:'none',color:'white',cursor:'pointer',textAlign:'left',borderRadius:8,fontSize:13} }, '📋 İlanlarım'),
+            (user?.role==='OWNER'||user?.role==='ADMIN') && React.createElement('button', { onClick:()=>{n('/admin');setO(false)}, style:{width:'100%',padding:'10px 14px',border:'none',background:'none',color:'#fbbf24',cursor:'pointer',textAlign:'left',borderRadius:8,fontSize:13} }, '⚙️ Admin Panel'),
+            React.createElement('button', { onClick:()=>{logout();n('/')}, style:{width:'100%',padding:'10px 14px',border:'none',background:'none',color:'#fca5a5',cursor:'pointer',textAlign:'left',borderRadius:8,fontSize:13,marginTop:4} }, '🚪 Çıkış Yap')
+          )
+        )
+      )
+    }
+
+    function Layout({ children }) {
+      const { isAuth } = useAuth()
+      const [sc, setSc] = useState(false)
+      useEffect(() => { const h = () => setSc(window.scrollY>20); window.addEventListener('scroll',h); return ()=>window.removeEventListener('scroll',h) }, [])
+      return React.createElement('div', { style:{minHeight:'100vh',background:'linear-gradient(135deg,#0c0a1d 0%,#1a1040 30%,#0f0c29 60%,#1a1040 100%)'} },
+        React.createElement('nav', { style:{position:'sticky',top:0,zIndex:1000,background:sc?'rgba(15,12,41,0.95)':'rgba(15,12,41,0.7)',backdropFilter:'blur(20px)',borderBottom:'1px solid rgba(255,255,255,0.06)',padding:'0 20px',height:68,display:'flex',alignItems:'center',justifyContent:'space-between'} },
+          React.createElement(Link, { to:'/', style:{display:'flex',alignItems:'center',gap:10} },
+            React.createElement('div', { style:{width:38,height:38,borderRadius:12,background:'linear-gradient(135deg,#667eea,#764ba2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:'white'} }, 'M'),
+            React.createElement('div', null, React.createElement('div', { style:{fontSize:20,fontWeight:800,color:'white',lineHeight:1} }, 'MarketPlace'))
+          ),
+          React.createElement('div', { style:{display:'flex',alignItems:'center',gap:12} },
+            React.createElement(Link, { to:'/', style:{color:'#c4b5fd',fontSize:13} }, 'Keşfet'),
+            isAuth ? React.createElement(React.Fragment, null,
+              React.createElement(Link, { to:'/create-listing', style:{background:'linear-gradient(135deg,#667eea,#764ba2)',color:'white',padding:'8px 14px',borderRadius:10,fontSize:12,fontWeight:600} }, '+ İlan Ver'),
+              React.createElement(UserMenu)
+            ) : React.createElement(React.Fragment, null,
+              React.createElement(Link, { to:'/login', style:{color:'#c4b5fd',fontSize:13} }, 'Giriş'),
+              React.createElement(Link, { to:'/register', style:{background:'linear-gradient(135deg,#667eea,#764ba2)',color:'white',padding:'8px 16px',borderRadius:10,fontSize:13,fontWeight:600} }, 'Kayıt Ol')
+            )
+          )
+        ),
+        React.createElement('div', { style:{maxWidth:1200,margin:'0 auto',padding:'24px 16px'} }, children)
+      )
+    }
+
+    // HOME
+    function Home() {
+      const { user } = useAuth()
+      const [ann, setAnn] = useState([])
+      const [ns, setNs] = useState(false)
+      const [list, setList] = useState([])
+      const [load, setLoad] = useState(true)
+      useEffect(() => {
+        (async () => {
+          try {
+            const [a,s,l] = await Promise.allSettled([api.get('/announcements'), api.get('/setup/check'), api.get('/listings/featured')])
+            if(a.status==='fulfilled') setAnn(a.value.data)
+            if(s.status==='fulfilled') setNs(s.value.data.needsSetup)
+            if(l.status==='fulfilled') setList(l.value.data)
+          } catch(e) {} finally { setLoad(false) }
+        })()
+      }, [])
+      if (load) return React.createElement('div', { style:{...St.center,color:'#94a3b8',fontSize:18} }, '⏳ Yükleniyor...')
+      const cats = [{i:'🎮',n:'Oyun',c:'#8b5cf6'},{i:'👕',n:'Giyim',c:'#3b82f6'},{i:'💻',n:'Teknoloji',c:'#10b981'},{i:'📱',n:'Elektronik',c:'#f59e0b'}]
+      return React.createElement('div', null,
+        ann.map(a => React.createElement('div', { key:a.id, className:'fadeUp', style:{background:'linear-gradient(135deg,rgba(245,158,11,0.2),rgba(239,68,68,0.2))',border:'1px solid rgba(245,158,11,0.3)',borderRadius:14,padding:'12px 18px',marginBottom:16,color:'#fbbf24',fontSize:14,fontWeight:600,textAlign:'center'} }, '📢 '+a.title+': '+a.message)),
+        React.createElement('div', { className:'fadeUp', style:{background:'radial-gradient(circle at 50% 0%,rgba(102,126,234,0.2),transparent 70%)',borderRadius:40,padding:'50px 20px',textAlign:'center',marginBottom:35,border:'1px solid rgba(255,255,255,0.06)'} },
+          React.createElement('h1', { style:{fontSize:'clamp(28px,5vw,52px)',fontWeight:900,marginBottom:10} }, 'Güvenli Alışverişin Yeni Adresi'),
+          React.createElement('p', { style:{fontSize:16,color:'#94a3b8',marginBottom:25} }, 'Modern ve güvenli alışveriş platformu'),
+          React.createElement('div', { style:{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'} },
+            ns ? React.createElement(Link, { to:'/setup', style:{...St.btn,background:'linear-gradient(135deg,#f59e0b,#ef4444)'} }, '🚀 Platformu Başlat') :
+            user ? React.createElement(Link, { to:'/create-listing', style:{...St.btn,background:'linear-gradient(135deg,#667eea,#764ba2)'} }, '📝 İlan Ver') :
+            React.createElement(Link, { to:'/register', style:{...St.btn,background:'linear-gradient(135deg,#667eea,#764ba2)'} }, 'Hemen Başla')
+          )
+        ),
+        React.createElement('h2', { style:{fontSize:22,fontWeight:800,marginBottom:16} }, 'Kategoriler'),
+        React.createElement('div', { style:{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))',gap:12,marginBottom:35} },
+          cats.map(c => React.createElement('div', { key:c.n, style:{background:c.c+'15',border:'1px solid '+c.c+'30',borderRadius:20,padding:24,cursor:'pointer'} },
+            React.createElement('div', { style:{fontSize:32,marginBottom:10} }, c.i),
+            React.createElement('h3', { style:{fontSize:16,fontWeight:700} }, c.n)
+          ))
+        ),
+        list.length > 0 && React.createElement('div', null,
+          React.createElement('h2', { style:{fontSize:22,fontWeight:800,marginBottom:16} }, 'Öne Çıkan İlanlar'),
+          React.createElement('div', { style:{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))',gap:12} },
+            list.map(l => React.createElement(Link, { to:'/listing/'+l.id, key:l.id },
+              React.createElement('div', { style:{...St.card,padding:20} },
+                React.createElement('div', { style:{width:'100%',height:140,borderRadius:12,background:'rgba(255,255,255,0.05)',marginBottom:12,...St.center,fontSize:36} }, '📦'),
+                React.createElement('h3', { style:{fontSize:15,fontWeight:700,marginBottom:6} }, l.title),
+                React.createElement('span', { style:{fontSize:20,fontWeight:800,color:'#818cf8'} }, l.price+' TL')
+              )
+            ))
+          )
+        ),
+        React.createElement('div', { style:{borderTop:'1px solid rgba(255,255,255,0.06)',padding:'24px 0',textAlign:'center',marginTop:40,color:'#64748b',fontSize:13} }, '© 2024 MarketPlace')
+      )
+    }
+
+    // AUTH
+    function AuthPage({ mode }) {
+      const { user, login } = useAuth()
+      const n = useNavigate()
+      const [f, setF] = useState({ username:'',email:'',password:'',confirmPassword:'',phone:'',setupKey:'' })
+      const [msg, setMsg] = useState('')
+      const [err, setErr] = useState('')
+      const [loading, setLoading] = useState(false)
+      useEffect(() => { if (mode==='setup') { api.get('/setup/check').then(r => { if(!r.data.needsSetup){ alert('Owner var'); n('/') } }) } if(user && mode!=='setup') n('/') }, [mode])
+      const submit = async (e) => {
+        e.preventDefault()
+        setMsg(''); setErr('')
+        if (mode==='setup' && f.password!==f.confirmPassword) { setErr('Şifreler eşleşmiyor'); return }
+        setLoading(true)
+        try {
+          if (mode==='login') { const r = await api.post('/auth/login', { email:f.email, password:f.password }); login(r.data.token, r.data.user); n('/') }
+          else if (mode==='register') { await api.post('/auth/register', { username:f.username, email:f.email, password:f.password, phone:f.phone }); setMsg('Kayıt başarılı! Yönlendiriliyorsunuz...'); setTimeout(()=>n('/login'),2000) }
+          else if (mode==='setup') { await api.post('/setup/initialize', { username:f.username, email:f.email, password:f.password, setupKey:f.setupKey }); alert('Kuruldu!'); n('/login') }
+        } catch(e) { setErr(e.response?.data?.error||'Hata') } finally { setLoading(false) }
+      }
+      const titles = { login:'Giriş Yap', register:'Kayıt Ol', setup:'Platform Kurulumu' }
+      const icons = { login:'🔐', register:'✨', setup:'👑' }
+      const bg = { login:'linear-gradient(135deg,#667eea,#764ba2)', register:'linear-gradient(135deg,#10b981,#059669)', setup:'linear-gradient(135deg,#f59e0b,#ef4444)' }
+      return React.createElement('div', { style:{maxWidth:400,margin:'30px auto'} },
+        React.createElement('div', { style:{...St.card,padding:35} },
+          React.createElement('div', { style:{textAlign:'center',marginBottom:25} },
+            React.createElement('div', { style:{width:50,height:50,borderRadius:14,background:bg[mode],...St.center,fontSize:22,margin:'0 auto 10'} }, icons[mode]),
+            React.createElement('h2', { style:{fontSize:22,fontWeight:800} }, titles[mode])
+          ),
+          msg && React.createElement('div', { style:{background:'rgba(16,185,129,0.12)',border:'1px solid rgba(16,185,129,0.25)',color:'#6ee7b7',padding:10,borderRadius:10,marginBottom:12,fontSize:12,textAlign:'center'} }, msg),
+          err && React.createElement('div', { style:{background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.25)',color:'#fca5a5',padding:10,borderRadius:10,marginBottom:12,fontSize:12,textAlign:'center'} }, err),
+          React.createElement('form', { onSubmit:submit },
+            (mode==='register'||mode==='setup') && React.createElement('input', { placeholder:'Kullanıcı Adı', value:f.username, onChange:e=>setF({...f,username:e.target.value}), required:true, style:St.input }),
+            React.createElement('input', { type:'email', placeholder:'Email', value:f.email, onChange:e=>setF({...f,email:e.target.value}), required:true, style:St.input }),
+            React.createElement('input', { type:'password', placeholder:'Şifre', value:f.password, onChange:e=>setF({...f,password:e.target.value}), required:true, style:St.input }),
+            mode==='setup' && React.createElement('input', { type:'password', placeholder:'Şifre Tekrar', value:f.confirmPassword, onChange:e=>setF({...f,confirmPassword:e.target.value}), required:true, style:St.input }),
+            mode==='register' && React.createElement('input', { placeholder:'Telefon', value:f.phone, onChange:e=>setF({...f,phone:e.target.value}), style:St.input }),
+            mode==='setup' && React.createElement('input', { type:'password', placeholder:'Kurulum Anahtarı', value:f.setupKey, onChange:e=>setF({...f,setupKey:e.target.value}), required:true, style:St.input }),
+            React.createElement('button', { type:'submit', disabled:loading, style:{...St.btn,background:loading?'#555':bg[mode],width:'100%',marginTop:6} }, loading?'İşlem yapılıyor...':titles[mode])
+          ),
+          mode==='login' && React.createElement('p', { style:{textAlign:'center',marginTop:14,color:'#94a3b8',fontSize:12} }, 'Hesabınız yok mu? ', React.createElement(Link, { to:'/register', style:{color:'#818cf8',fontWeight:600} }, 'Kayıt Ol')),
+          mode==='register' && React.createElement('p', { style:{textAlign:'center',marginTop:14,color:'#94a3b8',fontSize:12} }, 'Hesabınız var mı? ', React.createElement(Link, { to:'/login', style:{color:'#818cf8',fontWeight:600} }, 'Giriş Yap'))
+        )
+      )
+    }
+
+    // PROFILE
+    function Profile() {
+      const { user, logout } = useAuth()
+      const [listings, setListings] = useState([])
+      const n = useNavigate()
+      useEffect(() => { api.get('/listings/my').then(r=>setListings(r.data)).catch(()=>{}) }, [])
+      if (!user) return React.createElement('div', { style:{...St.center,color:'#94a3b8'} }, 'Giriş yapmalısınız')
+      return React.createElement('div', { style:{maxWidth:600,margin:'0 auto'} },
+        React.createElement('div', { style:{...St.card,marginBottom:18,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'} },
+          React.createElement('div', { style:{width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,#667eea,#764ba2)',...St.center,fontSize:22,fontWeight:800} }, user.username.charAt(0).toUpperCase()),
+          React.createElement('div', { style:{flex:1} },
+            React.createElement('h2', { style:{fontSize:20,fontWeight:800} }, user.username),
+            React.createElement('p', { style:{color:'#94a3b8',fontSize:12} }, user.email)
+          ),
+          React.createElement('button', { onClick:()=>{logout();n('/')}, style:{...St.btnSm,background:'rgba(239,68,68,0.2)',color:'#fca5a5'} }, 'Çıkış')
+        ),
+        React.createElement('h3', { style:{fontSize:18,fontWeight:700,marginBottom:12} }, 'İlanlarım'),
+        listings.length===0 ? React.createElement('p', { style:{color:'#94a3b8'} }, 'Henüz ilan yok.') :
+        listings.map(l => React.createElement('div', { key:l.id, style:{...St.card,padding:18,marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8} },
+          React.createElement('div', null, React.createElement('h4', { style:{fontSize:14,fontWeight:600} }, l.title), React.createElement('p', { style:{color:'#94a3b8',fontSize:11} }, l.price+' TL')),
+          React.createElement('span', { style:St.badge(l.status==='APPROVED'?'#10b981':l.status==='REJECTED'?'#ef4444':'#f59e0b') }, l.status==='APPROVED'?'Onaylı':l.status==='REJECTED'?'Red':'Bekliyor')
+        ))
+      )
+    }
+
+    // LISTINGS
+    function Listings({ mode }) {
+      const { user } = useAuth()
+      const { id } = useParams()
+      const [f, setF] = useState({ title:'', description:'', category:'GAMING', price:'', contactEmail:'', contactPhone:'' })
+      const [list, setList] = useState([])
+      const [det, setDet] = useState(null)
+      const [msg, setMsg] = useState('')
+      const [err, setErr] = useState('')
+      const [loading, setLoading] = useState(false)
+      useEffect(() => { if (mode==='my') api.get('/listings/my').then(r=>setList(r.data)).catch(()=>{})
+        if (mode==='detail' && id) api.get('/listings/'+id).then(r=>setDet(r.data)).catch(()=>{}) }, [mode, id])
+      const submit = async (e) => {
+        e.preventDefault(); setMsg(''); setErr(''); setLoading(true)
+        try { await api.post('/listings/create', f); setMsg('İlan onaya gönderildi!'); setF({ title:'', description:'', category:'GAMING', price:'', contactEmail:'', contactPhone:'' }) }
+        catch(e) { setErr(e.response?.data?.error||'Hata') } finally { setLoading(false) }
+      }
+      if (mode==='create') {
+        if (!user) return React.createElement('div', { style:{...St.center,color:'#94a3b8'} }, 'Giriş yapmalısınız')
+        return React.createElement('div', { style:{maxWidth:500,margin:'0 auto'} },
+          React.createElement('div', { style:St.card },
+            React.createElement('h2', { style:{fontSize:22,fontWeight:800,marginBottom:16} }, '📝 İlan Ver'),
+            msg && React.createElement('div', { style:{background:'rgba(16,185,129,0.12)',border:'1px solid rgba(16,185,129,0.25)',color:'#6ee7b7',padding:10,borderRadius:10,marginBottom:12,fontSize:12,textAlign:'center'} }, msg),
+            err && React.createElement('div', { style:{background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.25)',color:'#fca5a5',padding:10,borderRadius:10,marginBottom:12,fontSize:12,textAlign:'center'} }, err),
+            React.createElement('form', { onSubmit:submit },
+              React.createElement('input', { placeholder:'Başlık', value:f.title, onChange:e=>setF({...f,title:e.target.value}), required:true, style:St.input }),
+              React.createElement('textarea', { placeholder:'Açıklama', value:f.description, onChange:e=>setF({...f,description:e.target.value}), required:true, style:{...St.input,minHeight:80,resize:'vertical'} }),
+              React.createElement('select', { value:f.category, onChange:e=>setF({...f,category:e.target.value}), style:{...St.input,color:'white'} },
+                React.createElement('option', { value:'GAMING' }, '🎮 Oyun'), React.createElement('option', { value:'CLOTHING' }, '👕 Giyim'),
+                React.createElement('option', { value:'TECHNOLOGY' }, '💻 Teknoloji'), React.createElement('option', { value:'ELECTRONICS' }, '📱 Elektronik')
+              ),
+              React.createElement('input', { type:'number', placeholder:'Fiyat (TL)', value:f.price, onChange:e=>setF({...f,price:e.target.value}), required:true, style:St.input }),
+              React.createElement('input', { placeholder:'İletişim Email', value:f.contactEmail, onChange:e=>setF({...f,contactEmail:e.target.value}), style:St.input }),
+              React.createElement('input', { placeholder:'İletişim Telefon', value:f.contactPhone, onChange:e=>setF({...f,contactPhone:e.target.value}), style:St.input }),
+              React.createElement('button', { type:'submit', disabled:loading, style:{...St.btn,background:loading?'#555':'linear-gradient(135deg,#667eea,#764ba2)',width:'100%'} }, loading?'Gönderiliyor...':'İlanı Gönder')
+            )
+          )
+        )
+      }
+      if (mode==='my') {
+        if (!user) return React.createElement('div', { style:{...St.center,color:'#94a3b8'} }, 'Giriş yapmalısınız')
+        return React.createElement('div', { style:{maxWidth:700,margin:'0 auto'} },
+          React.createElement('h2', { style:{fontSize:22,fontWeight:800,marginBottom:16} }, '📋 İlanlarım'),
+          list.length===0 ? React.createElement('p', { style:{color:'#94a3b8'} }, 'Henüz ilan yok.') :
+          list.map(l => React.createElement('div', { key:l.id, style:{...St.card,padding:18,marginBottom:8} },
+            React.createElement('h3', { style:{fontSize:15,fontWeight:700} }, l.title),
+            React.createElement('p', { style:{color:'#94a3b8',fontSize:11} }, l.price+' TL'),
+            React.createElement('span', { style:St.badge(l.status==='APPROVED'?'#10b981':l.status==='REJECTED'?'#ef4444':'#f59e0b') }, l.status)
+          ))
+        )
+      }
+      if (mode==='detail' && det) {
+        return React.createElement('div', { style:{maxWidth:600,margin:'0 auto'} },
+          React.createElement('div', { style:St.card },
+            React.createElement('div', { style:{width:'100%',height:200,borderRadius:16,background:'rgba(255,255,255,0.05)',marginBottom:16,...St.center,fontSize:50} }, '📦'),
+            React.createElement('h1', { style:{fontSize:24,fontWeight:800,marginBottom:6} }, det.title),
+            React.createElement('p', { style:{color:'#94a3b8',fontSize:14,margin:'12px 0',lineHeight:1.5} }, det.description),
+            React.createElement('div', { style:{fontSize:28,fontWeight:900,color:'#818cf8',marginBottom:12} }, det.price+' TL'),
+            React.createElement('p', { style:{color:'#94a3b8',fontSize:12} }, '📧 '+(det.contactEmail||'Yok')),
+            React.createElement('p', { style:{color:'#94a3b8',fontSize:12} }, '📱 '+(det.contactPhone||'Yok'))
+          )
+        )
+      }
+      return null
+    }
+
+    // ADMIN
+    function Admin() {
+      const { user } = useAuth()
+      const n = useNavigate()
+      const [tab, setTab] = useState('dashboard')
+      const [users, setUsers] = useState([])
+      const [listings, setListings] = useState([])
+      const [stats, setStats] = useState({ users:0, listings:0, pending:0, approved:0 })
+      const [ann, setAnn] = useState({ title:'', message:'' })
+      useEffect(() => { if (!user||(user.role!=='OWNER'&&user.role!=='ADMIN')) n('/'); else load() }, [user])
+      const load = async () => {
+        try { const [u,l,s] = await Promise.all([api.get('/admin/users'), api.get('/admin/listings'), api.get('/admin/stats')])
+          setUsers(u.data); setListings(l.data); setStats(s.data) } catch(e) {}
+      }
+      const approve = async (id) => { await api.put('/admin/listings/'+id, { status:'APPROVED' }); load() }
+      const reject = async (id) => { const r=prompt('Red sebebi:'); if(r){await api.put('/admin/listings/'+id, { status:'REJECTED', rejectionReason:r }); load()} }
+      const ban = async (id) => { await api.put('/admin/users/'+id, { accountStatus:'BANNED' }); load() }
+      const unban = async (id) => { await api.put('/admin/users/'+id, { accountStatus:'ACTIVE' }); load() }
+      const role = async (id, r) => { await api.put('/admin/users/'+id, { role:r }); load() }
+      const sendAnn = async () => { await api.post('/admin/announcements', ann); alert('Gönderildi!'); setAnn({ title:'', message:'' }) }
+      if (!user) return null
+      const tabs = [{k:'dashboard',n:'📊 Dashboard'},{k:'users',n:'👥 Kullanıcılar'},{k:'listings',n:'📋 İlanlar'},{k:'announcement',n:'📢 Duyuru'}]
+      return React.createElement('div', null,
+        React.createElement('h1', { style:{fontSize:24,fontWeight:800,marginBottom:18} }, '⚙️ Admin Panel'),
+        React.createElement('div', { style:{display:'flex',gap:6,marginBottom:22,flexWrap:'wrap'} },
+          tabs.map(t => React.createElement('button', { key:t.k, onClick:()=>setTab(t.k), style:{padding:'10px 16px',borderRadius:10,border:'1px solid '+(tab===t.k?'#818cf8':'rgba(255,255,255,0.1)'),background:tab===t.k?'rgba(129,140,248,0.15)':'transparent',color:tab===t.k?'#818cf8':'#94a3b8',cursor:'pointer',fontSize:12,fontWeight:600} }, t.n))
+        ),
+        tab==='dashboard' && React.createElement('div', { style:{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))',gap:10} },
+          [{l:'Kullanıcı',v:stats.users,c:'#8b5cf6'},{l:'İlan',v:stats.listings,c:'#3b82f6'},{l:'Bekleyen',v:stats.pending,c:'#f59e0b'},{l:'Onaylı',v:stats.approved,c:'#10b981'}].map(s =>
+            React.createElement('div', { key:s.l, style:{...St.card,padding:18} },
+              React.createElement('div', { style:{color:s.c,fontSize:28,fontWeight:900} }, s.v),
+              React.createElement('div', { style:{color:'#94a3b8',fontSize:11} }, s.l)
+            )
+          )
+        ),
+        tab==='users' && React.createElement('div', { className:'table-wrap' },
+          React.createElement('table', { style:{width:'100%',borderCollapse:'collapse'} },
+            React.createElement('thead', null, React.createElement('tr', { style:{borderBottom:'1px solid rgba(255,255,255,0.08)'} },
+              ['Kullanıcı','Email','Rol','Durum','İşlem'].map(h => React.createElement('th', { key:h, style:{color:'#94a3b8',fontSize:11,fontWeight:600,padding:'8px 6px',textAlign:'left'} }, h))
+            )),
+            React.createElement('tbody', null, users.map(u => React.createElement('tr', { key:u.id, style:{borderBottom:'1px solid rgba(255,255,255,0.04)'} },
+              React.createElement('td', { style:{padding:'8px 6px',fontSize:12} }, u.username),
+              React.createElement('td', { style:{padding:'8px 6px',color:'#94a3b8',fontSize:11} }, u.email),
+              React.createElement('td', { style:{padding:'8px 6px'} }, React.createElement('select', { value:u.role, onChange:e=>role(u.id,e.target.value), style:{background:'rgba(255,255,255,0.05)',color:'white',border:'1px solid rgba(255,255,255,0.1)',borderRadius:6,padding:'3px 5px',fontSize:10} },
+                React.createElement('option', { value:'USER' }, 'USER'), React.createElement('option', { value:'CATEGORY_ADMIN' }, 'CATEGORY_ADMIN'), React.createElement('option', { value:'ADMIN' }, 'ADMIN')
+              )),
+              React.createElement('td', { style:{padding:'8px 6px'} }, React.createElement('span', { style:St.badge(u.accountStatus==='ACTIVE'?'#10b981':'#ef4444') }, u.accountStatus)),
+              React.createElement('td', { style:{padding:'8px 6px'} },
+                u.accountStatus!=='BANNED' ? React.createElement('button', { onClick:()=>ban(u.id), style:{...St.btnSm,background:'rgba(239,68,68,0.2)',color:'#fca5a5'} }, 'Ban') :
+                React.createElement('button', { onClick:()=>unban(u.id), style:{...St.btnSm,background:'rgba(16,185,129,0.2)',color:'#6ee7b7'} }, 'Unban')
+              )
+            )))
+          )
+        ),
+        tab==='listings' && React.createElement('div', { className:'table-wrap' },
+          React.createElement('table', { style:{width:'100%',borderCollapse:'collapse'} },
+            React.createElement('thead', null, React.createElement('tr', { style:{borderBottom:'1px solid rgba(255,255,255,0.08)'} },
+              ['İlan','Fiyat','Durum','İşlem'].map(h => React.createElement('th', { key:h, style:{color:'#94a3b8',fontSize:11,fontWeight:600,padding:'8px 6px',textAlign:'left'} }, h))
+            )),
+            React.createElement('tbody', null, listings.map(l => React.createElement('tr', { key:l.id, style:{borderBottom:'1px solid rgba(255,255,255,0.04)'} },
+              React.createElement('td', { style:{padding:'8px 6px',fontSize:12} }, l.title),
+              React.createElement('td', { style:{padding:'8px 6px',color:'#818cf8',fontSize:12,fontWeight:700} }, l.price+' TL'),
+              React.createElement('td', { style:{padding:'8px 6px'} }, React.createElement('span', { style:St.badge(l.status==='APPROVED'?'#10b981':l.status==='REJECTED'?'#ef4444':'#f59e0b') }, l.status)),
+              React.createElement('td', { style:{padding:'8px 6px',display:'flex',gap:4} },
+                l.status==='PENDING' && React.createElement(React.Fragment, null,
+                  React.createElement('button', { onClick:()=>approve(l.id), style:{...St.btnSm,background:'rgba(16,185,129,0.2)',color:'#6ee7b7'} }, '✓'),
+                  React.createElement('button', { onClick:()=>reject(l.id), style:{...St.btnSm,background:'rgba(239,68,68,0.2)',color:'#fca5a5'} }, '✕')
+                )
+              )
+            )))
+          )
+        ),
+        tab==='announcement' && React.createElement('div', { style:{maxWidth:450} },
+          React.createElement('div', { style:St.card },
+            React.createElement('h3', { style:{fontSize:16,fontWeight:700,marginBottom:12} }, '📢 Duyuru Gönder'),
+            React.createElement('input', { placeholder:'Başlık', value:ann.title, onChange:e=>setAnn({...ann,title:e.target.value}), style:St.input }),
+            React.createElement('textarea', { placeholder:'Mesaj', value:ann.message, onChange:e=>setAnn({...ann,message:e.target.value}), style:{...St.input,minHeight:70,resize:'vertical'} }),
+            React.createElement('button', { onClick:sendAnn, style:{...St.btn,background:'linear-gradient(135deg,#f59e0b,#ef4444)',width:'100%'} }, '📢 Gönder')
+          )
+        )
+      )
+    }
+
+    // APP
+    function App() {
+      return React.createElement(AuthProvider, null,
+        React.createElement(BrowserRouter, null,
+          React.createElement(Layout, null,
+            React.createElement(Routes, null,
+              React.createElement(Route, { path:'/', element:React.createElement(Home) }),
+              React.createElement(Route, { path:'/login', element:React.createElement(AuthPage, { mode:'login' }) }),
+              React.createElement(Route, { path:'/register', element:React.createElement(AuthPage, { mode:'register' }) }),
+              React.createElement(Route, { path:'/setup', element:React.createElement(AuthPage, { mode:'setup' }) }),
+              React.createElement(Route, { path:'/profile', element:React.createElement(Profile) }),
+              React.createElement(Route, { path:'/create-listing', element:React.createElement(Listings, { mode:'create' }) }),
+              React.createElement(Route, { path:'/my-listings', element:React.createElement(Listings, { mode:'my' }) }),
+              React.createElement(Route, { path:'/listing/:id', element:React.createElement(Listings, { mode:'detail' }) }),
+              React.createElement(Route, { path:'/admin/*', element:React.createElement(Admin) })
+            )
+          )
+        )
+      )
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App))
+  </script>
+</body>
+</html>
